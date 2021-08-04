@@ -5,29 +5,33 @@ use sdl2::keyboard::Keycode;
 use sdl2::pixels::Color;
 use sdl2::render::Canvas;
 use sdl2::video::Window;
+use sdl2::mouse::MouseButton;
 
 pub mod buttons;
+pub mod clickable;
 
 use buttons::Button;
+pub use clickable::Clickable;
 
 pub trait Drawaible {
     fn draw(&self, _: &mut Canvas<Window>) {}
 }
 
-pub struct RuiMainWindow {
+pub struct RuiMainWindow<F: FnMut() -> ()> {
     title: String,
     width: u32,
     height: u32,
     context: sdl2::Sdl,
     video: VideoSubsystem,
-    buttons: Vec<Button>
+    buttons: Vec<Button<F>>
 }
 
-impl RuiMainWindow {
+impl<F> RuiMainWindow<F>
+where F: FnMut() -> () {
     pub fn exec(&mut self) {
         let window = self.video.window(self.title.as_str(), self.width, self.height).build().unwrap();
         let mut canvas = window.into_canvas().build().unwrap();
-        canvas.set_draw_color(Color::RGB(0, 255, 255));
+        canvas.set_draw_color(Color::RGB(255, 255, 255));
         canvas.clear();
         canvas.present();
         
@@ -41,9 +45,19 @@ impl RuiMainWindow {
                     Event::KeyDown { keycode: Some(Keycode::Escape), .. } => {
                         break 'running
                     },
+                    Event::MouseButtonDown {mouse_btn: MouseButton::Left, x, y, ..} => {
+                        for button in self.buttons.iter_mut() {
+                            if button.include_coords(x, y) {
+                                button.on_click()
+                            }
+                        }
+                            
+                        
+                    }
                     _ => {}
                 }
             }
+            
             
             for button in self.buttons.iter() {
                 button.draw(&mut canvas);
@@ -53,12 +67,12 @@ impl RuiMainWindow {
         }
     }
 
-    pub fn add_button(&mut self, button: Button) {
+    pub fn add_button(&mut self, button: Button<F>) {
         self.buttons.push(button)
     }
 }
 
-pub fn init(title: &str, width: u32, height: u32) -> RuiMainWindow {
+pub fn init<F: FnMut() -> ()>(title: &str, width: u32, height: u32) -> RuiMainWindow<F> {
     let context = sdl2::init().unwrap();
     let video = context.video().unwrap();
     
