@@ -7,6 +7,9 @@ use sdl2::render::Canvas;
 use sdl2::video::Window;
 use sdl2::mouse::MouseButton;
 
+use std::time;
+use std::thread;
+
 pub mod buttons;
 pub mod clickable;
 
@@ -37,7 +40,10 @@ where F: FnMut() -> () {
         
         let mut event_pump = self.context.event_pump().unwrap();
         
+        let mut second_counter = 0.0;
         'running: loop {
+            
+            let time_start = time::SystemTime::now();
             
             for event in event_pump.poll_iter() {
                 match event {
@@ -57,13 +63,29 @@ where F: FnMut() -> () {
                     _ => {}
                 }
             }
-            
+
+            canvas.set_draw_color(Color::RGB(255, 255, 255));
+            canvas.clear();
             
             for button in self.buttons.iter() {
                 button.draw(&mut canvas);
             }
 
             canvas.present();
+
+            let time_end = time::SystemTime::now();
+            let frame_time = time_end.duration_since(time_start).unwrap().as_secs_f64();
+            second_counter += frame_time;
+            
+            if second_counter >= 1.0 {
+                println!("{}", frame_time);
+                second_counter = 0.0
+            }
+
+            if frame_time < 0.001 {
+                thread::sleep(time::Duration::from_secs_f64(0.001));
+                second_counter += 0.001
+            }
         }
     }
 

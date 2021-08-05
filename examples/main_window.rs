@@ -1,5 +1,3 @@
-mod buttons;
-
 use rui::init;
 use rui::buttons::Button;
 use rui::Clickable;
