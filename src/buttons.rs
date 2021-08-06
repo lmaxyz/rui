@@ -37,7 +37,7 @@ impl Button {
         self.on_click()
     }
 
-    pub fn change_text(&mut self, new_text: &str) {
+    pub fn set_text(&mut self, new_text: &str) {
         self.text = String::from(new_text)
     }
 
