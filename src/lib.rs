@@ -1,5 +1,4 @@
 use sdl2;
-use sdl2::VideoSubsystem;
 use sdl2::event::Event;
 use sdl2::keyboard::Keycode;
 use sdl2::pixels::Color;
@@ -13,30 +12,26 @@ use std::thread;
 pub mod buttons;
 pub mod clickable;
 
-use buttons::Button;
 pub use clickable::Clickable;
 
 pub trait Drawaible {
     fn draw(&self, _: &mut Canvas<Window>) {}
 }
 
-pub struct RuiMainWindow<F: FnMut() -> ()> {
-    title: String,
-    width: u32,
-    height: u32,
+pub trait Child: Drawaible + Clickable {}
+
+pub struct RuiMainWindow {
     context: sdl2::Sdl,
-    video: VideoSubsystem,
-    buttons: Vec<Button<F>>
+    pub canvas: Canvas<Window>,
+    childs: Vec<Box<dyn Child>>
 }
 
-impl<F> RuiMainWindow<F>
-where F: FnMut() -> () {
+impl RuiMainWindow {
     pub fn exec(&mut self) {
-        let window = self.video.window(self.title.as_str(), self.width, self.height).build().unwrap();
-        let mut canvas = window.into_canvas().build().unwrap();
-        canvas.set_draw_color(Color::RGB(255, 255, 255));
-        canvas.clear();
-        canvas.present();
+        self.canvas.set_draw_color(Color::RGB(255, 255, 255));
+        
+        self.canvas.clear();
+        self.canvas.present();
         
         let mut event_pump = self.context.event_pump().unwrap();
         
@@ -52,9 +47,9 @@ where F: FnMut() -> () {
                         break 'running
                     },
                     Event::MouseButtonDown {mouse_btn: MouseButton::Left, x, y, ..} => {
-                        for button in self.buttons.iter_mut() {
-                            if button.include_coords(x, y) {
-                                button.on_click()
+                        for child in self.childs.iter_mut() {
+                            if child.include_coords(x, y) {
+                                child.on_click()
                             }
                         }
                             
@@ -64,14 +59,16 @@ where F: FnMut() -> () {
                 }
             }
 
-            canvas.set_draw_color(Color::RGB(255, 255, 255));
-            canvas.clear();
+            self.canvas.set_draw_color(Color::RGB(255, 255, 255));
+            self.canvas.clear();
             
-            for button in self.buttons.iter() {
-                button.draw(&mut canvas);
+            for child in self.childs.iter() {
+                child.draw(&mut self.canvas);
+                // canvas.copy(&texture, None, Some(button.text_wrapper)).unwrap();
+                
             }
 
-            canvas.present();
+            self.canvas.present();
 
             let time_end = time::SystemTime::now();
             let frame_time = time_end.duration_since(time_start).unwrap().as_secs_f64();
@@ -82,29 +79,28 @@ where F: FnMut() -> () {
                 second_counter = 0.0
             }
 
-            if frame_time < 0.001 {
-                thread::sleep(time::Duration::from_secs_f64(0.001));
-                second_counter += 0.001
+            if frame_time < 0.01 {
+                thread::sleep(time::Duration::from_secs_f64(0.05));
+                second_counter += 0.05
             }
         }
     }
 
-    pub fn add_button(&mut self, button: Button<F>) {
-        self.buttons.push(button)
+    pub fn add_child(&mut self, child: Box<dyn Child> ) {
+        self.childs.push(child)
     }
 }
 
-pub fn init<F: FnMut() -> ()>(title: &str, width: u32, height: u32) -> RuiMainWindow<F> {
+pub fn init(title: &str, width: u32, height: u32) -> RuiMainWindow {
     let context = sdl2::init().unwrap();
     let video = context.video().unwrap();
+    let window = video.window(title, width, height).build().unwrap();
+    let canvas = window.into_canvas().build().unwrap();
     
     RuiMainWindow {
-        title: title.to_string(),
-        width,
-        height,
         context,
-        video,
-        buttons: Vec::new()
+        canvas,
+        childs: Vec::new()
     }
 }
 
