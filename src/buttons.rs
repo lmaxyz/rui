@@ -15,11 +15,11 @@ pub struct Button {
     pub text: String,
     pub text_wrapper: Rect,
 
-    on_click_fn: Box<dyn FnMut() -> ()>
+    on_click_fn: Option<Box<dyn FnMut() -> ()>>
 }
 
 impl Button {
-    pub fn new(text: &str, width: u32, height: u32, x: i32, y: i32, on_click_fn: Box<dyn FnMut() -> ()>) -> Button {
+    pub fn new(text: &str, width: u32, height: u32, x: i32, y: i32, on_click_fn: Option<Box<dyn FnMut() -> ()>>) -> Button {
         Button {
             border: Rect::new(x, y, width, height),
             inner: Rect::new(x+2, y+2, width-4, height-4),
@@ -71,7 +71,10 @@ impl Drawaible for Button {
 impl Clickable for Button {
     fn on_click(&mut self) {
         if self.is_enabled {
-            (self.on_click_fn)()
+            match &mut self.on_click_fn {
+                Some(f) => f(),
+                None => {}
+            }
         }
     }
 
