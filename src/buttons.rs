@@ -6,6 +6,8 @@ use sdl2::pixels::Color;
 
 use crate::{Child, Clickable, Drawaible};
 
+const FONT_SIZE: u16 = 24;
+
 
 pub struct Button {
     border: Rect,
@@ -25,8 +27,9 @@ impl Button {
     pub fn new(text: &str, width: u32, height: u32, x: i32, y: i32, canvas: &Canvas<Window>, on_click_fn: Option<Box<dyn FnMut() -> ()>>) -> Button {
         let ttf_context = sdl2::ttf::init().unwrap();
     
-        let mut font = ttf_context.load_font("fonts\\Default.ttf", 64).unwrap();
+        let mut font = ttf_context.load_font("fonts\\Default.ttf", FONT_SIZE * 2).unwrap();
         font.set_style(sdl2::ttf::FontStyle::NORMAL);
+        
         
         let surface = font
             .render(text)
@@ -35,6 +38,12 @@ impl Button {
 
         let texture_creator = canvas.texture_creator();
         let texture = texture_creator.create_texture_from_surface(surface).unwrap();
+        let text_width = (text.chars().count() * FONT_SIZE as usize / 2) as u32;
+        let text_height = FONT_SIZE;
+        let text_x_position = ((width - text_width) as i32 / 2) + x;
+        let text_y_position = ((height - text_height as u32) as i32 / 2) + y;
+
+
 
         Button {
             border: Rect::new(x, y, width, height),
@@ -43,7 +52,7 @@ impl Button {
             is_enabled: true,
             
             text: text.to_string(),
-            text_wrapper: Rect::new(x+20, y+5, width-40, height-10),
+            text_wrapper: Rect::new(text_x_position, text_y_position, text_width, text_height as u32),
             text_texture: texture.raw(),
             
             on_click_fn,
