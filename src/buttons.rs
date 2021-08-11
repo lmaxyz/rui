@@ -4,7 +4,7 @@ use sdl2::{rect::{Point, Rect}, render::Canvas};
 use sdl2::video::Window;
 use sdl2::pixels::Color;
 
-use crate::{Child, Clickable, Drawaible};
+use crate::{RuiObject, Clickable};
 
 const FONT_SIZE: u16 = 24;
 
@@ -74,7 +74,7 @@ impl Button {
     }
 }
 
-impl Drawaible for Button {
+impl RuiObject for Button {
     fn draw(&self, canvas: &mut Canvas<Window>) {
         // ToDo: Переделать отрисовку текста, текстура не создавалась заново каждый раз
 
@@ -86,9 +86,7 @@ impl Drawaible for Button {
         let texture = self.get_text_texture(&canvas);
         canvas.copy(&texture, None, Some(self.text_wrapper)).unwrap();
     }
-}
 
-impl Clickable for Button {
     fn on_click(&mut self) {
         if self.is_enabled {
             match &mut self.on_click_fn {
@@ -102,5 +100,3 @@ impl Clickable for Button {
         self.border.contains_point(Point::new(x, y))
     }
 }
-
-impl Child for Button {}

@@ -14,16 +14,18 @@ pub mod clickable;
 
 pub use clickable::Clickable;
 
-pub trait Drawaible {
+pub trait RuiObject {
     fn draw(&self, _: &mut Canvas<Window>) {}
+    fn include_coords(&self, x: i32, y: i32) -> bool;
+    fn on_click(&mut self) {}
 }
 
-pub trait Child: Drawaible + Clickable {}
-
 pub struct RuiMainWindow {
+    width: u16,
+    height: u16,
     context: sdl2::Sdl,
     pub canvas: Canvas<Window>,
-    childs: Vec<Box<dyn Child>>
+    childs: Vec<Box<dyn RuiObject>>
 }
 
 impl RuiMainWindow {
@@ -36,8 +38,8 @@ impl RuiMainWindow {
         let mut event_pump = self.context.event_pump().unwrap();
         
         let mut second_counter = 0.0;
-        'running: loop {
-            
+
+        'running: loop {    
             let time_start = time::SystemTime::now();
             
             for event in event_pump.poll_iter() {
@@ -86,18 +88,26 @@ impl RuiMainWindow {
         }
     }
 
-    pub fn add_child(&mut self, child: Box<dyn Child> ) {
+    pub fn add_child(&mut self, child: Box<dyn RuiObject>) {
         self.childs.push(child)
     }
 }
 
-pub fn init(title: &str, width: u32, height: u32) -> RuiMainWindow {
+impl RuiObject for RuiMainWindow {
+    fn include_coords(&self, x: i32, y: i32) -> bool {
+        x > 0 && x < self.width as i32 && y > 0 && y < self.height as i32
+    }
+}
+
+pub fn init(title: &str, width: u16, height: u16) -> RuiMainWindow {
     let context = sdl2::init().unwrap();
     let video = context.video().unwrap();
-    let window = video.window(title, width, height).build().unwrap();
+    let window = video.window(title, width as u32, height as u32).build().unwrap();
     let canvas = window.into_canvas().build().unwrap();
     
     RuiMainWindow {
+        width,
+        height,
         context,
         canvas,
         childs: Vec::new()
