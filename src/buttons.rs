@@ -4,7 +4,7 @@ use sdl2::{rect::{Point, Rect}, render::Canvas};
 use sdl2::video::Window;
 use sdl2::pixels::Color;
 
-use crate::{RuiObject, Clickable};
+use crate::RuiObject;
 
 const FONT_SIZE: u16 = 24;
 
