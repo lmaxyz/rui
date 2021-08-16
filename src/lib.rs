@@ -11,6 +11,8 @@ use std::thread;
 
 pub mod buttons;
 pub mod clickable;
+pub mod widget;
+pub mod checkbox;
 
 pub use clickable::Clickable;
 
@@ -54,8 +56,6 @@ impl RuiMainWindow {
                                 child.on_click()
                             }
                         }
-                            
-                        
                     }
                     _ => {}
                 }
@@ -66,8 +66,6 @@ impl RuiMainWindow {
             
             for child in self.childs.iter() {
                 child.draw(&mut self.canvas);
-                // canvas.copy(&texture, None, Some(button.text_wrapper)).unwrap();
-                
             }
 
             self.canvas.present();

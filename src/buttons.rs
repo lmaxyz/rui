@@ -9,7 +9,7 @@ use crate::RuiObject;
 const FONT_SIZE: u16 = 24;
 
 
-pub struct Button {
+pub struct ButtonBuilder {
     border: Rect,
     inner: Rect,
 
@@ -23,8 +23,8 @@ pub struct Button {
     on_click_fn: Option<Box<dyn FnMut() -> ()>>
 }
 
-impl Button {
-    pub fn new(text: &str, width: u32, height: u32, x: i32, y: i32, canvas: &Canvas<Window>, on_click_fn: Option<Box<dyn FnMut() -> ()>>) -> Button {
+impl ButtonBuilder {
+    fn new(text: &str, width: u32, height: u32, x: i32, y: i32, canvas: &Canvas<Window>) -> ButtonBuilder {
         let ttf_context = sdl2::ttf::init().unwrap();
     
         let mut font = ttf_context.load_font("fonts\\Default.ttf", FONT_SIZE * 2).unwrap();
@@ -45,7 +45,7 @@ impl Button {
 
 
 
-        Button {
+        ButtonBuilder {
             border: Rect::new(x, y, width, height),
             inner: Rect::new(x+2, y+2, width-4, height-4),
             _is_clicked: false,
@@ -55,8 +55,49 @@ impl Button {
             text_wrapper: Rect::new(text_x_position, text_y_position, text_width, text_height as u32),
             text_texture: texture.raw(),
             
-            on_click_fn,
+            on_click_fn: None,
         }
+    }
+
+    pub fn on_click(mut self, f: Box<dyn FnMut() -> ()>) -> ButtonBuilder {
+        self.on_click_fn = Some(f);
+        self
+    }
+
+    pub fn build(self) -> Button {
+        Button {
+            border: self.border,
+            inner: self.inner,
+            _is_clicked: self._is_clicked,
+            is_enabled: self.is_enabled,
+            
+            text: self.text,
+            text_wrapper: self.text_wrapper,
+            text_texture: self.text_texture,
+
+            on_click_fn: self.on_click_fn
+        }
+    }
+}
+
+
+pub struct Button {
+    border: Rect,
+    inner: Rect,
+
+    _is_clicked: bool,
+    is_enabled: bool,
+
+    pub text: String,
+    pub text_wrapper: Rect,
+    pub text_texture: *mut SDL_Texture,
+
+    on_click_fn: Option<Box<dyn FnMut() -> ()>>
+}
+
+impl Button {
+    pub fn new(text: &str, width: u32, height: u32, x: i32, y: i32, canvas: &Canvas<Window>) -> ButtonBuilder {
+        ButtonBuilder::new(text, width, height, x, y, canvas)
     }
 
     pub fn click(&mut self) {
