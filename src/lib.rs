@@ -6,6 +6,8 @@ use sdl2::render::Canvas;
 use sdl2::video::Window;
 use sdl2::mouse::MouseButton;
 
+use std::cell::RefCell;
+use std::rc::Rc;
 use std::time;
 use std::thread;
 
@@ -27,7 +29,8 @@ pub struct RuiMainWindow {
     height: u16,
     context: sdl2::Sdl,
     pub canvas: Canvas<Window>,
-    childs: Vec<Box<dyn RuiObject>>
+    childs: Vec<Rc<RefCell<dyn RuiObject>>>,
+    is_running: bool
 }
 
 impl RuiMainWindow {
@@ -52,6 +55,7 @@ impl RuiMainWindow {
                     },
                     Event::MouseButtonDown {mouse_btn: MouseButton::Left, x, y, ..} => {
                         for child in self.childs.iter_mut() {
+                            let mut child = child.borrow_mut();
                             if child.include_coords(x, y) {
                                 child.on_click()
                             }
@@ -65,6 +69,7 @@ impl RuiMainWindow {
             self.canvas.clear();
             
             for child in self.childs.iter() {
+                let child = child.borrow();
                 child.draw(&mut self.canvas);
             }
 
@@ -86,8 +91,12 @@ impl RuiMainWindow {
         }
     }
 
-    pub fn add_child(&mut self, child: Box<dyn RuiObject>) {
+    pub fn add_child(&mut self, child: Rc<RefCell<dyn RuiObject>>) {
         self.childs.push(child)
+    }
+
+    pub fn close(&mut self) {
+        self.is_running = false
     }
 }
 
@@ -97,19 +106,20 @@ impl RuiObject for RuiMainWindow {
     }
 }
 
-pub fn init(title: &str, width: u16, height: u16) -> RuiMainWindow {
+pub fn init(title: &str, width: u16, height: u16) -> Rc<RefCell<RuiMainWindow>> {
     let context = sdl2::init().unwrap();
     let video = context.video().unwrap();
     let window = video.window(title, width as u32, height as u32).build().unwrap();
     let canvas = window.into_canvas().build().unwrap();
     
-    RuiMainWindow {
+    Rc::new(RefCell::new(RuiMainWindow {
         width,
         height,
         context,
         canvas,
-        childs: Vec::new()
-    }
+        childs: Vec::new(),
+        is_running: true
+    }))
 }
 
 #[cfg(test)]

@@ -1,3 +1,6 @@
+use std::cell::RefCell;
+use std::rc::Rc;
+
 use sdl2::render::Texture;
 use sdl2::sys::SDL_Texture;
 use sdl2::{rect::{Point, Rect}, render::Canvas};
@@ -64,19 +67,21 @@ impl ButtonBuilder {
         self
     }
 
-    pub fn build(self) -> Button {
-        Button {
-            border: self.border,
-            inner: self.inner,
-            _is_clicked: self._is_clicked,
-            is_enabled: self.is_enabled,
-            
-            text: self.text,
-            text_wrapper: self.text_wrapper,
-            text_texture: self.text_texture,
-
-            on_click_fn: self.on_click_fn
-        }
+    pub fn build(self) -> Rc<RefCell<Button>> {
+        Rc::new(RefCell::new(
+            Button {
+                border: self.border,
+                inner: self.inner,
+                _is_clicked: self._is_clicked,
+                is_enabled: self.is_enabled,
+                
+                text: self.text,
+                text_wrapper: self.text_wrapper,
+                text_texture: self.text_texture,
+    
+                on_click_fn: self.on_click_fn
+            }
+        ))
     }
 }
 
@@ -98,6 +103,17 @@ pub struct Button {
 impl Button {
     pub fn new(text: &str, width: u32, height: u32, x: i32, y: i32, canvas: &Canvas<Window>) -> ButtonBuilder {
         ButtonBuilder::new(text, width, height, x, y, canvas)
+    }
+
+    pub fn pos_x(&self) -> i32 {
+        self.border.x
+    }
+
+    pub fn set_x(&mut self, x: i32) {
+        let dif = x - self.border.x;
+        self.border.set_x(x);
+        self.inner.set_x(self.inner.x + dif);
+        self.text_wrapper.set_x(self.text_wrapper.x + dif)
     }
 
     pub fn click(&mut self) {

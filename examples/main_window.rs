@@ -1,32 +1,20 @@
 use rui::init;
 use rui::buttons::Button;
-use rui::checkbox::RuiCheckbox;
-
-fn sum() {
-    println!("Yeah!!!")
-}
 
 fn main() {
-    let mut main_window = init("Fantasy World", 800, 600);
-
+    let main_window = init("Main window test", 800, 600);
+    let mw_clone = main_window.clone();
+    let mut main_window_rc = main_window.borrow_mut();
     
-    let btn2 = Button::new("End", 120, 40, 160, 10, &main_window.canvas)
+    let button = Button::new("Exit", 120, 40, 160, 10, &main_window_rc.canvas)
+        .on_click(Box::new(move || {
+            let mut main_window = mw_clone.borrow_mut();
+            // ToDo: borrow_mut вылетает в панике, т.к. выше уже захвачено мутабельно - надо переделать
+            main_window.close()
+        }))
         .build();
 
-    let chbx = RuiCheckbox::new(16, 385, 285);
+    main_window_rc.add_child(button);
 
-    for i in 0..3 {
-        let btn_text = &format!("Button {}", i)[..];
-        
-        let btn = Button::new(btn_text, 120, 40, 20, 10 + 45 * i, &main_window.canvas)
-            .on_click(Box::new(sum))
-            .build();
-        
-            main_window.add_child(Box::new(btn));
-    }
-
-    main_window.add_child(Box::new(btn2));
-    main_window.add_child(Box::new(chbx));
-
-    main_window.exec()
+    main_window_rc.exec()
 }
