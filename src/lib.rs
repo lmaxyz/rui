@@ -8,10 +8,11 @@ use sdl2::mouse::MouseButton;
 
 use std::cell::RefCell;
 use std::rc::Rc;
-use std::time;
 use std::thread;
+use std::sync::Mutex;
+use std::time::{UNIX_EPOCH, SystemTime, Duration};
 
-pub mod buttons;
+pub mod button;
 pub mod clickable;
 pub mod widget;
 pub mod checkbox;
@@ -30,7 +31,6 @@ pub struct RuiMainWindow {
     context: sdl2::Sdl,
     pub canvas: Canvas<Window>,
     childs: Vec<Rc<RefCell<dyn RuiObject>>>,
-    is_running: bool
 }
 
 impl RuiMainWindow {
@@ -45,7 +45,7 @@ impl RuiMainWindow {
         let mut second_counter = 0.0;
 
         'running: loop {    
-            let time_start = time::SystemTime::now();
+            let time_start = SystemTime::now();
             
             for event in event_pump.poll_iter() {
                 match event {
@@ -75,7 +75,7 @@ impl RuiMainWindow {
 
             self.canvas.present();
 
-            let time_end = time::SystemTime::now();
+            let time_end = SystemTime::now();
             let frame_time = time_end.duration_since(time_start).unwrap().as_secs_f64();
             second_counter += frame_time;
             
@@ -85,7 +85,7 @@ impl RuiMainWindow {
             }
 
             if frame_time < 0.01 {
-                thread::sleep(time::Duration::from_secs_f64(0.05));
+                thread::sleep(Duration::from_secs_f64(0.05));
                 second_counter += 0.05
             }
         }
@@ -95,8 +95,11 @@ impl RuiMainWindow {
         self.childs.push(child)
     }
 
-    pub fn close(&mut self) {
-        self.is_running = false
+    pub fn close(&self) {
+        let events = self.context.event().unwrap();
+        let timestamp = SystemTime::now().duration_since(UNIX_EPOCH).unwrap().as_secs() as u32;
+        let event = Event::Quit {timestamp};
+        events.push_event(event).unwrap()
     }
 }
 
@@ -106,19 +109,18 @@ impl RuiObject for RuiMainWindow {
     }
 }
 
-pub fn init(title: &str, width: u16, height: u16) -> Rc<RefCell<RuiMainWindow>> {
+pub fn init(title: &str, width: u16, height: u16) -> Rc<Mutex<RuiMainWindow>> {
     let context = sdl2::init().unwrap();
     let video = context.video().unwrap();
     let window = video.window(title, width as u32, height as u32).build().unwrap();
     let canvas = window.into_canvas().build().unwrap();
     
-    Rc::new(RefCell::new(RuiMainWindow {
+    Rc::new(Mutex::new(RuiMainWindow {
         width,
         height,
         context,
         canvas,
-        childs: Vec::new(),
-        is_running: true
+        childs: Vec::new()
     }))
 }
 

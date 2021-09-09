@@ -1,11 +1,11 @@
 use rui::init;
-use rui::buttons::Button;
+use rui::button::Button;
 use rui::checkbox::RuiCheckbox;
 
 
 fn main() {
     let main_window = init("Main window test", 800, 600);
-    let mut main_window_rc = main_window.borrow_mut();
+    let mut main_window_rc = main_window.lock().unwrap();
     
     let chbx = RuiCheckbox::new(16, 385, 285);
 
